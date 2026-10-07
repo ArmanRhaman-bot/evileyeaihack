@@ -647,6 +647,60 @@ nav .active { background: #b6ff00; color: #071006; }
 }
 .modal-foot b { color: #baff00; }
 
+/* ============ Prediction size / conf ============ */
+.pred-size {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 1000;
+  letter-spacing: 3px;
+  color: #baff00;
+  text-shadow: 0 0 14px #35ff45;
+}
+.pred-conf {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #62eaff;
+  letter-spacing: 2px;
+}
+
+/* ============ Last result box ============ */
+.last-result {
+  margin-top: 10px;
+  padding: 10px;
+  background: #07150a;
+  border: 1px solid #123419;
+  border-radius: 10px;
+  font-size: 10px;
+}
+.last-result .lr-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr .8fr;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 9px;
+}
+.last-result .lr-win  { color: #7aff82; font-weight: 1000; }
+.last-result .lr-loss { color: #ff8e95; font-weight: 1000; }
+.last-result .lr-pending { color: #ffd76b; font-weight: 1000; }
+
+/* ============ Mini stat row ============ */
+.stat-mini {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-top: 10px;
+}
+.stat-mini div {
+  background: #06130a;
+  border: 1px solid #173b1d;
+  border-radius: 10px;
+  text-align: center;
+  padding: 9px 2px;
+}
+.stat-mini b { display: block; color: #baff00; font-size: 15px; }
+.stat-mini span { font-size: 6.5px; color: #607964; }
+
 /* ============ Reopen btn ============ */
 .reopen-btn {
   position: fixed;
