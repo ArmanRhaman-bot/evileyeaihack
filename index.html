@@ -10,25 +10,45 @@
 <body>
 <div id="toast"></div>
 
-<!-- AUTH -->
+<!-- ================= AUTH (USER LOGIN) ================= -->
 <section id="authScreen" class="screen">
-  <div class="scan"></div>
-  <div class="logo">EVIL EYE <span>SYNC</span></div>
-  <div class="auth-panel">
-    <div class="mini-title">RAKIB VAI EVIL EYE SYNC</div>
-    <div class="chips"><b>SYS: <i>READY</i></b><b>CORE: <i>SYNC</i></b><b>PING: <i id="authPing">--</i></b></div>
-    <div class="login-title">LOGIN</div>
-    <div class="lock">⌁</div>
-    <p class="muted">ENTER YOUR VIP ACCESS KEY</p>
-    <input id="vipKey" class="input" placeholder="RDX-XXXXXXXXXXXX" autocomplete="off">
-    <button id="userLogin" class="glow lime">UNLOCK SIGNAL</button>
-    <button id="showAdmin" class="link-btn">ADMIN CONTROL</button>
-    <div class="auth-foot">ACCESS REQUIRED • SECURE SESSION</div>
+  <div class="bg-grid"></div>
+  <div class="logo">RAKIB VAI <span>EVIL EYE SYNC</span></div>
+
+  <div class="hacker-frame">
+    <!-- corner arrows -->
+    <span class="arrow a-tl"></span><span class="arrow a-tr"></span>
+    <span class="arrow a-bl"></span><span class="arrow a-br"></span>
+    <span class="arrow a-ml"></span><span class="arrow a-mr"></span>
+
+    <div class="frame-head">RAKIB VAI EVIL EYE SYNC</div>
+    <div class="frame-chips">
+      <b>SYS: <i>READY</i></b>
+      <b>CORE: <i>SYNC</i></b>
+      <b>PING: <i id="authPing">--</i></b>
+    </div>
+
+    <div class="inner-panel">
+      <div class="inner-title">LOGIN</div>
+      <input id="vipKey" class="input" placeholder="ENTER PASSWORD" autocomplete="off">
+      <button id="userLogin" class="glow lime big-btn">UNLOCK SIGNAL</button>
+      <div class="access-req">ACCESS REQUIRED</div>
+    </div>
+
+    <div class="frame-bottom">
+      <button id="showHistoryModal" class="chip-btn lime">TELEGRAM</button>
+      <button id="openHistoryFromAuth" class="chip-btn cyan">HISTORY</button>
+      <button id="hideAuth" class="chip-btn dark">HIDE</button>
+    </div>
   </div>
+
+  <button id="showAdmin" class="link-btn">ADMIN CONTROL</button>
+  <div class="auth-foot">ACCESS REQUIRED • SECURE SESSION</div>
 </section>
 
-<!-- ADMIN LOGIN -->
+<!-- ================= ADMIN LOGIN ================= -->
 <section id="adminLoginScreen" class="screen hidden">
+  <div class="bg-grid"></div>
   <div class="logo">ADMIN <span>CORE</span></div>
   <div class="auth-panel">
     <div class="login-title">ADMIN LOGIN</div>
@@ -39,13 +59,20 @@
   </div>
 </section>
 
-<!-- USER APP -->
+<!-- ================= USER APP ================= -->
 <section id="userApp" class="app hidden">
-<header class="topbar"><div class="brand">EVIL EYE <span>SYNC</span></div><div><span class="liveDot"></span> LIVE <button id="logoutUser" class="tiny">LOGOUT</button></div></header>
+<header class="topbar">
+  <div class="brand">RAKIB VAI <span>EVIL EYE SYNC</span></div>
+  <div><span class="liveDot"></span> LIVE <button id="logoutUser" class="tiny">LOGOUT</button></div>
+</header>
 
 <div class="hud">
   <strong>RAKIB VAI EVIL EYE SYNC</strong>
-  <div class="chips"><b>SYS: <i>READY</i></b><b>CORE: <i>SYNC</i></b><b>PING: <i id="ping">--</i></b></div>
+  <div class="chips">
+    <b>SYS: <i>READY</i></b>
+    <b>CORE: <i>SYNC</i></b>
+    <b>PING: <i id="ping">--</i></b>
+  </div>
 </div>
 
 <div class="game-card">
@@ -54,12 +81,18 @@
   <div id="period" class="period">----------</div>
   <div id="orb" class="orb"><span id="num">-</span></div>
   <div id="meta" class="meta">SYNCING LIVE RESULT…</div>
-  <div class="buttons"><button id="refresh" class="glow">↻ REFRESH</button><button id="openGame" class="glow cyan">OPEN GAME</button></div>
+  <div class="buttons">
+    <button id="refresh" class="glow">↻ REFRESH</button>
+    <button id="openGame" class="glow cyan">OPEN GAME</button>
+  </div>
 </div>
 
 <div class="card">
   <div class="card-title">TREND MONITOR</div>
-  <div class="bars"><div><span>BIG 5–9</span><b id="bigN">0</b><em><i id="bigBar"></i></em></div><div><span>SMALL 0–4</span><b id="smallN">0</b><em><i id="smallBar"></i></em></div></div>
+  <div class="bars">
+    <div><span>BIG 5–9</span><b id="bigN">0</b><em><i id="bigBar"></i></em></div>
+    <div><span>SMALL 0–4</span><b id="smallN">0</b><em><i id="smallBar"></i></em></div>
+  </div>
   <div class="note">Historical trend monitor only. It does not guarantee or predict a future game result.</div>
 </div>
 
@@ -68,36 +101,82 @@
   <div id="history" class="history"></div>
 </div>
 
-<nav><button class="active" data-target="history">HISTORY</button><button data-target="trend">STATS</button><button id="tg">TELEGRAM</button></nav>
+<nav>
+  <button class="active" data-target="history">HISTORY</button>
+  <button data-target="trend">STATS</button>
+  <button id="tg">TELEGRAM</button>
+</nav>
 </section>
 
-<!-- ADMIN APP -->
+<!-- ================= ADMIN APP ================= -->
 <section id="adminApp" class="app hidden">
-<header class="topbar"><div class="brand">EVIL EYE <span>ADMIN</span></div><button id="logoutAdmin" class="tiny">LOGOUT</button></header>
-<div class="admin-hero"><div class="admin-badge">⚡ CONTROL CORE</div><h1>ADMIN PANEL</h1><p>License, user and system management</p></div>
+<header class="topbar">
+  <div class="brand">EVIL EYE <span>ADMIN</span></div>
+  <button id="logoutAdmin" class="tiny">LOGOUT</button>
+</header>
+
+<div class="admin-hero">
+  <div class="admin-badge">⚡ CONTROL CORE</div>
+  <h1>ADMIN PANEL</h1>
+  <p>License, user and system management</p>
+</div>
 
 <div class="stat-grid">
-<div><b id="sUsers">0</b><span>USERS</span></div><div><b id="sKeys">0</b><span>TOTAL KEYS</span></div><div><b id="sActive">0</b><span>ACTIVE KEYS</span></div><div><b id="sSignals">0</b><span>SIGNALS</span></div>
+  <div><b id="sUsers">0</b><span>USERS</span></div>
+  <div><b id="sKeys">0</b><span>TOTAL KEYS</span></div>
+  <div><b id="sActive">0</b><span>ACTIVE KEYS</span></div>
+  <div><b id="sSignals">0</b><span>SIGNALS</span></div>
 </div>
 
 <div class="card">
-<div class="card-title">GENERATE VIP KEY</div>
-<div class="key-gen"><select id="days"><option value="1">1 DAY</option><option value="7">7 DAYS</option><option value="30" selected>30 DAYS</option><option value="365">1 YEAR</option><option value="3650">LIFETIME</option></select><button id="genKey" class="glow lime">GENERATE</button></div>
-<div id="newKey" class="new-key hidden"></div>
+  <div class="card-title">GENERATE VIP KEY</div>
+  <div class="key-gen">
+    <select id="days">
+      <option value="1">1 DAY</option>
+      <option value="7">7 DAYS</option>
+      <option value="30" selected>30 DAYS</option>
+      <option value="365">1 YEAR</option>
+      <option value="3650">LIFETIME</option>
+    </select>
+    <button id="genKey" class="glow lime">GENERATE</button>
+  </div>
+  <div id="newKey" class="new-key hidden"></div>
 </div>
 
 <div class="card">
-<div class="card-title">KEY MANAGEMENT</div>
-<div id="keys" class="admin-list"></div>
+  <div class="card-title">KEY MANAGEMENT</div>
+  <div id="keys" class="admin-list"></div>
 </div>
 
 <div class="card">
-<div class="card-title">RECENT USERS</div>
-<div id="users" class="admin-list"></div>
+  <div class="card-title">RECENT USERS</div>
+  <div id="users" class="admin-list"></div>
 </div>
 
 <button id="adminRefresh" class="glow full">↻ REFRESH SYSTEM</button>
 </section>
+
+<!-- ================= PREDICTION HISTORY MODAL ================= -->
+<div id="historyModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>PREDICTION HISTORY</span>
+      <button id="closeHistoryModal" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="hist-head">
+        <span>PERIOD</span><span>PRED</span><span>ACTUAL</span><span>RES</span>
+      </div>
+      <div id="modalHistory" class="hist-list">
+        <div class="empty">No history yet</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span>TOTAL: <b id="modalTotal">0</b></span>
+      <span>ACCURACY: <b id="modalAcc">100%</b></span>
+    </div>
+  </div>
+</div>
 
 <script src="/js/app.js"></script>
 </body>
