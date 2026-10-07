@@ -8,154 +8,186 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<div id="toast"></div>
 
-<!-- ================= AUTH (USER LOGIN) ================= -->
-<section id="authScreen" class="screen">
-  <div class="bg-grid"></div>
-  <div class="logo">EVIL EYE <span>AI HACK</span></div>
-
-  <div class="hacker-frame">
-    <span class="arrow a-tl"></span><span class="arrow a-tr"></span>
-    <span class="arrow a-bl"></span><span class="arrow a-br"></span>
-    <span class="arrow a-ml"></span><span class="arrow a-mr"></span>
-
-    <div class="frame-head">EVIL EYE AI HACK</div>
-    <div class="frame-chips">
-      <b>SYS: <i>READY</i></b>
-      <b>CORE: <i>SYNC</i></b>
-      <b>PING: <i id="authPing">--</i></b>
+<!-- ================= BACKGROUND GAME ================= -->
+<div id="bgGame">
+  <iframe id="bgFrame" src="https://dkwin9.com/#/register?invitationCode=691942278103"
+    allow="fullscreen" loading="lazy"></iframe>
+  <div id="bgFallback" class="hidden">
+    <div class="fallback-inner">
+      <div class="fallback-title">DK WIN BACKGROUND</div>
+      <p>Game site iframe e load hocche na. Niche button theke open koro.</p>
+      <button class="glow lime" onclick="window.open('https://dkwin9.com/#/register?invitationCode=691942278103','_blank')">OPEN DK WIN</button>
     </div>
+  </div>
+</div>
 
-    <div class="inner-panel">
-      <div class="inner-title">LOGIN</div>
-      <input id="vipKey" class="input" placeholder="ENTER PASSWORD" autocomplete="off">
-      <button id="userLogin" class="glow lime big-btn">UNLOCK SIGNAL</button>
-      <div class="access-req">ACCESS REQUIRED</div>
-    </div>
+<!-- ================= FLOATING PANEL ================= -->
+<div id="floatPanel" class="float-panel">
 
-    <div class="frame-bottom">
-      <button id="showHistoryModal" class="chip-btn lime">TELEGRAM</button>
-      <button id="openHistoryFromAuth" class="chip-btn cyan">HISTORY</button>
-      <button id="hideAuth" class="chip-btn dark">HIDE</button>
+  <!-- drag handle -->
+  <div id="dragBar" class="drag-bar">
+    <span class="drag-dots">⋮⋮</span>
+    <span class="drag-title">EVIL EYE AI HACK</span>
+    <div class="win-btns">
+      <button id="btnMin" title="Minimize">—</button>
+      <button id="btnClose" title="Hide">✕</button>
     </div>
   </div>
 
-  <button id="showAdmin" class="link-btn">ADMIN CONTROL</button>
-  <div class="auth-foot">ACCESS REQUIRED • SECURE SESSION</div>
-</section>
+  <!-- resize handle (bottom-right) -->
+  <div id="resizeHandle" class="resize-handle">◢</div>
 
-<!-- ================= ADMIN LOGIN ================= -->
-<section id="adminLoginScreen" class="screen hidden">
-  <div class="bg-grid"></div>
-  <div class="logo">ADMIN <span>CORE</span></div>
-  <div class="auth-panel">
-    <div class="login-title">ADMIN LOGIN</div>
-    <input id="adminUser" class="input" placeholder="Username">
-    <input id="adminPass" type="password" class="input" placeholder="Password">
-    <button id="adminLogin" class="glow lime">ENTER CONTROL PANEL</button>
-    <button id="backAuth" class="link-btn">BACK</button>
-  </div>
-</section>
+  <div class="panel-body">
 
-<!-- ================= USER APP ================= -->
-<section id="userApp" class="app hidden">
-<header class="topbar">
-  <div class="brand">EVIL EYE <span>AI HACK</span></div>
-  <div><span class="liveDot"></span> LIVE <button id="logoutUser" class="tiny">LOGOUT</button></div>
-</header>
+    <!-- AUTH -->
+    <section id="authScreen" class="screen-compact">
+      <div class="bg-grid"></div>
+      <div class="hacker-frame">
+        <span class="arrow a-tl"></span><span class="arrow a-tr"></span>
+        <span class="arrow a-bl"></span><span class="arrow a-br"></span>
+        <span class="arrow a-ml"></span><span class="arrow a-mr"></span>
 
-<div class="hud">
-  <strong>EVIL EYE AI HACK</strong>
-  <div class="chips">
-    <b>SYS: <i>READY</i></b>
-    <b>CORE: <i>SYNC</i></b>
-    <b>PING: <i id="ping">--</i></b>
-  </div>
-</div>
+        <div class="frame-head">EVIL EYE AI HACK</div>
+        <div class="frame-chips">
+          <b>SYS: <i>READY</i></b>
+          <b>CORE: <i>SYNC</i></b>
+          <b>PING: <i id="authPing">--</i></b>
+        </div>
 
-<div class="game-card">
-  <div class="game-head"><span>WIN GO 1 MIN</span><span class="online">● ONLINE</span></div>
-  <div class="label">LATEST PERIOD</div>
-  <div id="period" class="period">----------</div>
-  <div id="orb" class="orb"><span id="num">-</span></div>
-  <div id="meta" class="meta">SYNCING LIVE RESULT…</div>
-  <div class="buttons">
-    <button id="refresh" class="glow">↻ REFRESH</button>
-    <button id="openGame" class="glow cyan">OPEN GAME</button>
-  </div>
-</div>
+        <div class="inner-panel">
+          <div class="inner-title">LOGIN</div>
+          <input id="vipKey" class="input" placeholder="ENTER PASSWORD" autocomplete="off">
+          <button id="userLogin" class="glow lime big-btn">UNLOCK SIGNAL</button>
+          <div class="access-req">ACCESS REQUIRED</div>
+        </div>
 
-<div class="card">
-  <div class="card-title">TREND MONITOR</div>
-  <div class="bars">
-    <div><span>BIG 5–9</span><b id="bigN">0</b><em><i id="bigBar"></i></em></div>
-    <div><span>SMALL 0–4</span><b id="smallN">0</b><em><i id="smallBar"></i></em></div>
-  </div>
-  <div class="note">Historical trend monitor only. It does not guarantee or predict a future game result.</div>
-</div>
+        <div class="frame-bottom">
+          <button id="showHistoryModal" class="chip-btn lime">TELEGRAM</button>
+          <button id="openHistoryFromAuth" class="chip-btn cyan">HISTORY</button>
+          <button id="hideAuth" class="chip-btn dark">HIDE</button>
+        </div>
+      </div>
 
-<div class="card">
-  <div class="card-title">RECENT HISTORY <small id="updated">--</small></div>
-  <div id="history" class="history"></div>
-</div>
+      <button id="showAdmin" class="link-btn">ADMIN CONTROL</button>
+    </section>
 
-<nav>
-  <button class="active" data-target="history">HISTORY</button>
-  <button data-target="trend">STATS</button>
-  <button id="tg">TELEGRAM</button>
-</nav>
-</section>
+    <!-- ADMIN LOGIN -->
+    <section id="adminLoginScreen" class="screen-compact hidden">
+      <div class="hacker-frame">
+        <span class="arrow a-tl"></span><span class="arrow a-tr"></span>
+        <span class="arrow a-bl"></span><span class="arrow a-br"></span>
+        <div class="frame-head">ADMIN CORE</div>
+        <div class="inner-panel">
+          <div class="inner-title">ADMIN LOGIN</div>
+          <input id="adminUser" class="input" placeholder="Username">
+          <input id="adminPass" type="password" class="input" placeholder="Password">
+          <button id="adminLogin" class="glow lime big-btn">ENTER CONTROL PANEL</button>
+          <button id="backAuth" class="link-btn">BACK</button>
+        </div>
+      </div>
+    </section>
 
-<!-- ================= ADMIN APP ================= -->
-<section id="adminApp" class="app hidden">
-<header class="topbar">
-  <div class="brand">EVIL EYE <span>ADMIN</span></div>
-  <button id="logoutAdmin" class="tiny">LOGOUT</button>
-</header>
+    <!-- USER APP -->
+    <section id="userApp" class="app-compact hidden">
+      <header class="topbar">
+        <div class="brand">EVIL EYE <span>AI HACK</span></div>
+        <div><span class="liveDot"></span> LIVE <button id="logoutUser" class="tiny">LOGOUT</button></div>
+      </header>
 
-<div class="admin-hero">
-  <div class="admin-badge">⚡ CONTROL CORE</div>
-  <h1>ADMIN PANEL</h1>
-  <p>License, user and system management</p>
-</div>
+      <div class="hud">
+        <strong>EVIL EYE AI HACK</strong>
+        <div class="chips">
+          <b>SYS: <i>READY</i></b>
+          <b>CORE: <i>SYNC</i></b>
+          <b>PING: <i id="ping">--</i></b>
+        </div>
+      </div>
 
-<div class="stat-grid">
-  <div><b id="sUsers">0</b><span>USERS</span></div>
-  <div><b id="sKeys">0</b><span>TOTAL KEYS</span></div>
-  <div><b id="sActive">0</b><span>ACTIVE KEYS</span></div>
-  <div><b id="sSignals">0</b><span>SIGNALS</span></div>
-</div>
+      <div class="game-card">
+        <div class="game-head"><span>WIN GO 1 MIN</span><span class="online">● ONLINE</span></div>
+        <div class="label">LATEST PERIOD</div>
+        <div id="period" class="period">----------</div>
+        <div id="orb" class="orb"><span id="num">-</span></div>
+        <div id="meta" class="meta">SYNCING LIVE RESULT…</div>
+        <div class="buttons">
+          <button id="refresh" class="glow">↻ REFRESH</button>
+          <button id="openGame" class="glow cyan">OPEN GAME</button>
+        </div>
+      </div>
 
-<div class="card">
-  <div class="card-title">GENERATE VIP KEY</div>
-  <div class="key-gen">
-    <select id="days">
-      <option value="1">1 DAY</option>
-      <option value="7">7 DAYS</option>
-      <option value="30" selected>30 DAYS</option>
-      <option value="365">1 YEAR</option>
-      <option value="3650">LIFETIME</option>
-    </select>
-    <button id="genKey" class="glow lime">GENERATE</button>
-  </div>
-  <div id="newKey" class="new-key hidden"></div>
-</div>
+      <div class="card">
+        <div class="card-title">TREND MONITOR</div>
+        <div class="bars">
+          <div><span>BIG 5–9</span><b id="bigN">0</b><em><i id="bigBar"></i></em></div>
+          <div><span>SMALL 0–4</span><b id="smallN">0</b><em><i id="smallBar"></i></em></div>
+        </div>
+      </div>
 
-<div class="card">
-  <div class="card-title">KEY MANAGEMENT</div>
-  <div id="keys" class="admin-list"></div>
-</div>
+      <div class="card">
+        <div class="card-title">RECENT HISTORY <small id="updated">--</small></div>
+        <div id="history" class="history"></div>
+      </div>
 
-<div class="card">
-  <div class="card-title">RECENT USERS</div>
-  <div id="users" class="admin-list"></div>
-</div>
+      <nav>
+        <button class="active" data-target="history">HISTORY</button>
+        <button data-target="trend">STATS</button>
+        <button id="tg">TELEGRAM</button>
+      </nav>
+    </section>
 
-<button id="adminRefresh" class="glow full">↻ REFRESH SYSTEM</button>
-</section>
+    <!-- ADMIN APP -->
+    <section id="adminApp" class="app-compact hidden">
+      <header class="topbar">
+        <div class="brand">EVIL EYE <span>ADMIN</span></div>
+        <button id="logoutAdmin" class="tiny">LOGOUT</button>
+      </header>
 
-<!-- ================= PREDICTION HISTORY MODAL ================= -->
+      <div class="admin-hero">
+        <div class="admin-badge">⚡ CONTROL CORE</div>
+        <h1>ADMIN PANEL</h1>
+        <p>License, user and system management</p>
+      </div>
+
+      <div class="stat-grid">
+        <div><b id="sUsers">0</b><span>USERS</span></div>
+        <div><b id="sKeys">0</b><span>TOTAL KEYS</span></div>
+        <div><b id="sActive">0</b><span>ACTIVE KEYS</span></div>
+        <div><b id="sSignals">0</b><span>SIGNALS</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">GENERATE VIP KEY</div>
+        <div class="key-gen">
+          <select id="days">
+            <option value="1">1 DAY</option>
+            <option value="7">7 DAYS</option>
+            <option value="30" selected>30 DAYS</option>
+            <option value="365">1 YEAR</option>
+            <option value="3650">LIFETIME</option>
+          </select>
+          <button id="genKey" class="glow lime">GENERATE</button>
+        </div>
+        <div id="newKey" class="new-key hidden"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">KEY MANAGEMENT</div>
+        <div id="keys" class="admin-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">RECENT USERS</div>
+        <div id="users" class="admin-list"></div>
+      </div>
+
+      <button id="adminRefresh" class="glow full">↻ REFRESH SYSTEM</button>
+    </section>
+
+  </div><!-- /panel-body -->
+</div><!-- /floatPanel -->
+
+<!-- ================= HISTORY MODAL ================= -->
 <div id="historyModal" class="modal hidden">
   <div class="modal-box">
     <div class="modal-head">
@@ -176,6 +208,11 @@
     </div>
   </div>
 </div>
+
+<!-- Floating re-open button (jokhon minimize korbe) -->
+<button id="reopenBtn" class="reopen-btn hidden">◉ SHOW PANEL</button>
+
+<div id="toast"></div>
 
 <script src="/app.js"></script>
 </body>
