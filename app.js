@@ -6,6 +6,14 @@ let role=localStorage.getItem("evil_role")||"";
 const ADMIN_USER="@arman";
 const ADMIN_PASS="@arman2026##";
 
+/* ===== SESSION STATE ===== */
+let SESSION = {
+  total:0, win:0, loss:0,
+  log: [],           // [{period, predSize, predNum, actSize, actNum, result}]
+  pending: null,     // {period, size, num, conf}
+  lastIssue: null
+};
+
 function headers(){return {"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
 async function api(url,opt={}){const r=await fetch(url,{...opt,headers:{...headers(),...(opt.headers||{})}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Request failed");return j}
 function toast(msg){$("toast").textContent=msg;$("toast").className="show";setTimeout(()=>$("toast").className="",2200)}
@@ -13,12 +21,8 @@ function show(id){["authScreen","adminLoginScreen","userApp","adminApp"].forEach
 function classify(n){return Number(n)>=5?"BIG":"SMALL"}
 function cclass(c){return (c||"").includes("red")?"red":(c||"").includes("green")?"green":"violet"}
 
-/* ---- Modal open/close ---- */
-function openHistoryModal(){ $("historyModal").classList.remove("hidden"); }
-function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
-
 /* ================================================== */
-/* DRAGGABLE + RESIZABLE FLOATING PANEL              */
+/* DRAGGABLE + RESIZABLE PANEL                        */
 /* ================================================== */
 (function(){
   const panel = $("floatPanel");
@@ -28,9 +32,7 @@ function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
   const btnMin= $("btnMin");
   const btnClose= $("btnClose");
 
-  // --- Drag ---
   let dragging=false, startX=0, startY=0, startLeft=0, startTop=0;
-
   function pointerDown(e){
     if(e.target.closest(".win-btns")) return;
     dragging=true;
@@ -38,7 +40,6 @@ function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
     startX=p.clientX; startY=p.clientY;
     const rect=panel.getBoundingClientRect();
     startLeft=rect.left; startTop=rect.top;
-    // convert from translateX(-50%) to fixed left
     panel.style.transform="none";
     panel.style.left=startLeft+"px";
     panel.style.top =startTop +"px";
@@ -53,7 +54,6 @@ function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
     const p = e.touches?e.touches[0]:e;
     const dx=p.clientX-startX, dy=p.clientY-startY;
     let nl=startLeft+dx, nt=startTop+dy;
-    // bounds
     nl=Math.max(0,Math.min(window.innerWidth-60,nl));
     nt=Math.max(0,Math.min(window.innerHeight-40,nt));
     panel.style.left=nl+"px";
@@ -69,7 +69,6 @@ function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
   bar.addEventListener("mousedown",pointerDown);
   bar.addEventListener("touchstart",pointerDown,{passive:false});
 
-  // --- Resize ---
   let resizing=false, rStartX=0, rStartY=0, rStartW=0, rStartH=0;
   function resizeDown(e){
     e.stopPropagation();
@@ -105,18 +104,152 @@ function closeHistoryModal(){ $("historyModal").classList.add("hidden"); }
   handle.addEventListener("mousedown",resizeDown);
   handle.addEventListener("touchstart",resizeDown,{passive:false});
 
-  // --- Minimize / Close (hide panel, show reopen) ---
-  function hidePanel(){
-    panel.classList.add("hidden");
-    reopen.classList.remove("hidden");
-  }
-  btnMin.onclick  = hidePanel;
-  btnClose.onclick= hidePanel;
-  reopen.onclick  = ()=>{
-    panel.classList.remove("hidden");
-    reopen.classList.add("hidden");
-  };
+  function hidePanel(){ panel.classList.add("hidden"); reopen.classList.remove("hidden"); }
+  btnMin.onclick = hidePanel;
+  btnClose.onclick = hidePanel;
+  reopen.onclick = ()=>{ panel.classList.remove("hidden"); reopen.classList.add("hidden"); };
 })();
+
+/* ================================================== */
+/* AI PREDICTION (same logic as python)               */
+/* ================================================== */
+function aiAnalyze(data){
+  if(!data || !data.length){
+    const size = Math.random()<0.5 ? "BIG" : "SMALL";
+    const num  = size==="BIG" ? rand(5,9) : rand(0,4);
+    return {size, num, conf: rand(85,92)};
+  }
+  const last5 = data.slice(0,5).map(x=>classify(x.number));
+  let size, conf, num;
+
+  if(last5[0]===last5[1] && last5[1]===last5[2]){
+    size = last5[0];
+    conf = rand(95,99);
+  } else if(last5[0]!==last5[1]){
+    size = last5[0]==="SMALL" ? "BIG" : "SMALL";
+    conf = rand(88,94);
+  } else {
+    const bigCount = last5.filter(x=>x==="BIG").length;
+    size = bigCount > (last5.length-bigCount) ? "SMALL" : "BIG";
+    conf = rand(85,90);
+  }
+  num = size==="BIG" ? rand(5,9) : rand(0,4);
+  return {size, num, conf};
+}
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+/* ================================================== */
+/* MAIN PREDICTION LOOP                               */
+/* ================================================== */
+async function tick(){
+  try{
+    const t = performance.now();
+    const j = await api("/api/history?x="+Date.now());
+    const d = j?.data?.list || [];
+    if(!d.length) throw new Error("No data");
+
+    $("ping").textContent = Math.round(performance.now()-t)+"MS";
+
+    const currPeriod = String(d[0].issueNumber);
+    const currNum    = Number(d[0].number);
+    const currSize   = classify(currNum);
+
+    // ===== RESOLVE pending prediction =====
+    if(SESSION.pending && String(SESSION.pending.period) === currPeriod){
+      const res = (SESSION.pending.size === currSize) ? "WIN" : "LOSS";
+      SESSION.total++;
+      if(res==="WIN") SESSION.win++; else SESSION.loss++;
+
+      SESSION.log.unshift({
+        period: SESSION.pending.period,
+        predSize: SESSION.pending.size,
+        predNum: SESSION.pending.num,
+        actSize: currSize,
+        actNum: currNum,
+        result: res
+      });
+      if(SESSION.log.length > 30) SESSION.log.pop();
+
+      renderLastResult(SESSION.log[0]);
+      renderStats();
+      renderLog();
+      renderModal();
+
+      if(res==="WIN") toast("✅ WIN — "+SESSION.pending.size);
+      else toast("❌ LOSS — was "+currSize);
+
+      SESSION.pending = null;
+    }
+
+    // ===== Generate NEW prediction for NEXT period =====
+    if(!SESSION.pending){
+      const nxt = String(Number(currPeriod)+1);
+      const a = aiAnalyze(d);
+      SESSION.pending = { period: nxt, size: a.size, num: a.num, conf: a.conf };
+    }
+
+    // ===== Render current prediction =====
+    const p = SESSION.pending;
+    $("targetPeriod").textContent = p.period;
+    $("predNum").textContent = p.num;
+    $("predNum").className = p.size==="BIG" ? "red" : "green";
+    $("predSize").textContent = (p.size==="BIG"?"🔴 ":"🔵 ") + p.size;
+    $("predConf").textContent = "CONF: " + p.conf + "%";
+    $("predStatus").textContent = "Waiting for period " + p.period + "…";
+    $("lastUpdated").textContent = new Date().toLocaleTimeString();
+
+  }catch(e){
+    $("predStatus").textContent = "OFFLINE — check server";
+  }
+}
+
+/* ---- Renderers ---- */
+function renderLastResult(r){
+  if(!r){ $("lastResult").innerHTML = '<div class="empty">No prediction yet</div>'; return; }
+  const cls = r.result==="WIN" ? "lr-win" : "lr-loss";
+  const sym = r.result==="WIN" ? "✅ WIN" : "❌ LOSS";
+  $("lastResult").innerHTML = `
+    <div class="lr-row">
+      <span>${String(r.period).slice(-6)}</span>
+      <span class="tag ${r.predSize.toLowerCase()}">${r.predSize} ${r.predNum}</span>
+      <span>${r.actSize} ${r.actNum}</span>
+      <span class="${cls}">${sym}</span>
+    </div>`;
+}
+
+function renderStats(){
+  $("stTotal").textContent = SESSION.total;
+  $("stWin").textContent   = SESSION.win;
+  $("stLoss").textContent  = SESSION.loss;
+  const rate = SESSION.total ? Math.round(SESSION.win*100/SESSION.total) : 0;
+  $("stRate").textContent  = rate + "%";
+}
+
+function renderLog(){
+  const el = $("predLog");
+  if(!SESSION.log.length){ el.innerHTML = '<div class="empty">No predictions yet</div>'; return; }
+  el.innerHTML = SESSION.log.map(r=>`
+    <div class="row">
+      <span>${String(r.period).slice(-6)}</span>
+      <span class="tag ${r.predSize.toLowerCase()}">${r.predSize[0]}${r.predNum}</span>
+      <span class="n ${r.actSize==="BIG"?"red":"green"}">${r.actNum}</span>
+      <span class="tag ${r.result==="WIN"?"big":"small"}">${r.result==="WIN"?"W":"L"}</span>
+    </div>`).join("");
+}
+
+function renderModal(){
+  const el = $("modalHistory");
+  if(!SESSION.log.length){ el.innerHTML = '<div class="empty">No history yet</div>'; $("modalTotal").textContent="0"; $("modalAcc").textContent="--%"; return; }
+  el.innerHTML = SESSION.log.map(r=>`
+    <div class="row">
+      <span>${String(r.period).slice(-6)}</span>
+      <span class="tag ${r.predSize.toLowerCase()}">${r.predSize[0]}${r.predNum}</span>
+      <span class="n ${r.actSize==="BIG"?"red":"green"}">${r.actNum}</span>
+      <span class="tag ${r.result==="WIN"?"big":"small"}">${r.result==="WIN"?"W":"L"}</span>
+    </div>`).join("");
+  $("modalTotal").textContent = SESSION.total;
+  $("modalAcc").textContent = (SESSION.total?Math.round(SESSION.win*100/SESSION.total):0)+"%";
+}
 
 /* ================================================== */
 /* AUTH                                               */
@@ -130,16 +263,15 @@ async function loginUser(){
     localStorage.setItem("evil_token",token);
     localStorage.setItem("evil_role",role);
     show("userApp");
-    loadHistory();
+    tick();
+    setInterval(tick, 15000);
   }catch(e){toast(e.message)}
 }
 
 async function loginAdmin(){
   const u=$("adminUser").value.trim();
   const p=$("adminPass").value;
-  if(u!==ADMIN_USER || p!==ADMIN_PASS){
-    return toast("Invalid admin credentials");
-  }
+  if(u!==ADMIN_USER || p!==ADMIN_PASS) return toast("Invalid admin credentials");
   try{
     const j=await api("/api/login/admin",{method:"POST",body:JSON.stringify({username:u,password:p})});
     token=j.token;role="admin";
@@ -153,51 +285,6 @@ async function loginAdmin(){
 async function logout(){
   try{await api("/api/logout",{method:"POST"})}catch{}
   token="";role="";localStorage.clear();show("authScreen");
-}
-
-/* ================================================== */
-/* HISTORY                                            */
-/* ================================================== */
-async function loadHistory(){
-  const t=performance.now();
-  try{
-    const j=await api("/api/history?x="+Date.now());
-    const d=j?.data?.list||[]; if(!d.length)throw new Error("No history");
-    $("ping").textContent=Math.round(performance.now()-t)+"MS";
-    $("period").textContent=d[0].issueNumber;
-    $("num").textContent=d[0].number;$("num").className=cclass(d[0].color);
-    $("meta").textContent=`${d[0].color||"unknown"} • ${classify(d[0].number)} • LIVE`;
-    const s=d.slice(0,20);
-    const big=s.filter(x=>classify(x.number)==="BIG").length;
-    const small=s.length-big;
-    $("bigN").textContent=big;$("smallN").textContent=small;
-    $("bigBar").style.width=(big/s.length*100)+"%";
-    $("smallBar").style.width=(small/s.length*100)+"%";
-    $("updated").textContent=new Date().toLocaleTimeString();
-    $("history").innerHTML=s.map(x=>`<div class="row"><span>${x.issueNumber}</span><span class="n ${cclass(x.color)}">${x.number}</span><span class="tag ${classify(x.number).toLowerCase()}">${classify(x.number)}</span><span>${x.color||"-"}</span></div>`).join("");
-    updateModalHistory(s);
-  }catch(e){
-    $("meta").textContent="LIVE HISTORY OFFLINE";
-    $("history").innerHTML='<div class="empty">Unable to load live history</div>';
-  }
-}
-
-function updateModalHistory(s){
-  const list=$("modalHistory");
-  if(!s.length){ list.innerHTML='<div class="empty">No history yet</div>'; $("modalTotal").textContent="0"; return; }
-  list.innerHTML=s.map(x=>{
-    const pred=classify(x.number);
-    const actual=classify(x.number);
-    const ok=pred===actual;
-    return `<div class="row">
-      <span>${x.issueNumber.slice(-6)}</span>
-      <span class="tag ${pred.toLowerCase()}">${pred==="BIG"?"B":"S"}</span>
-      <span class="n ${cclass(x.color)}">${x.number}</span>
-      <span class="tag ${ok?'big':'small'}">${ok?"W":"L"}</span>
-    </div>`;
-  }).join("");
-  $("modalTotal").textContent=s.length;
-  $("modalAcc").textContent="100%";
 }
 
 /* ================================================== */
@@ -238,22 +325,22 @@ $("showAdmin").onclick=()=>show("adminLoginScreen");
 $("backAuth").onclick=()=>show("authScreen");
 $("logoutUser").onclick=logout;
 $("logoutAdmin").onclick=logout;
-$("refresh").onclick=loadHistory;
 $("adminRefresh").onclick=loadAdmin;
 $("genKey").onclick=genKey;
-$("openGame").onclick=()=>window.open("https://dkwin9.com/#/register?invitationCode=691942278103","_blank","noopener,noreferrer");
+$("refresh").onclick=tick;
+$("inject").onclick=()=>{ SESSION.pending=null; tick(); toast("New prediction generated"); };
 $("tg").onclick=()=>window.open("https://t.me/Topboyadm","_blank","noopener,noreferrer");
+$("showTg").onclick=()=>window.open("https://t.me/Topboyadm","_blank","noopener,noreferrer");
 
-$("openHistoryFromAuth").onclick=()=>{openHistoryModal();loadHistory();};
-$("showHistoryModal").onclick=()=>{openHistoryModal();loadHistory();};
-$("closeHistoryModal").onclick=closeHistoryModal;
-$("hideAuth").onclick=()=>{document.getElementById("floatPanel").classList.add("hidden");document.getElementById("reopenBtn").classList.remove("hidden");};
+$("openHistoryFromAuth").onclick=()=>{ $("historyModal").classList.remove("hidden"); renderModal(); };
+$("closeHistoryModal").onclick=()=>$("historyModal").classList.add("hidden");
+$("hideAuth").onclick=()=>{ $("floatPanel").classList.add("hidden"); $("reopenBtn").classList.remove("hidden"); };
 
 document.querySelectorAll("nav button[data-target]").forEach(b=>{
   b.onclick=()=>{
     const cards=document.querySelectorAll("#userApp .card");
-    if(b.dataset.target==="history"&&cards[1])cards[1].scrollIntoView({behavior:"smooth"});
-    if(b.dataset.target==="trend"&&cards[0])cards[0].scrollIntoView({behavior:"smooth"});
+    if(b.dataset.target==="log"&&cards[1])cards[1].scrollIntoView({behavior:"smooth"});
+    if(b.dataset.target==="stats"&&cards[0])cards[0].scrollIntoView({behavior:"smooth"});
   };
 });
 
@@ -261,24 +348,5 @@ document.querySelectorAll("nav button[data-target]").forEach(b=>{
 /* BOOT                                               */
 /* ================================================== */
 if(token&&role==="admin"){show("adminApp");loadAdmin()}
-else if(token&&role==="user"){show("userApp");loadHistory()}
+else if(token&&role==="user"){show("userApp");tick();setInterval(tick,15000);}
 else show("authScreen");
-
-setInterval(()=>{
-  if(role==="user"&&!$("userApp").classList.contains("hidden"))loadHistory();
-},15000);
-
-/* ================================================== */
-/* BACKGROUND IFRAME FALLBACK DETECT                  */
-/* ================================================== */
-setTimeout(()=>{
-  const f=$("bgFrame");
-  try{
-    // jodi cross-origin e block hoy, contentDocument null hoy
-    if(!f.contentWindow || f.contentWindow.length===0){
-      // some browsers e error na diye load hoy, tai ei check ta soft
-    }
-  }catch(e){
-    $("bgFallback").classList.remove("hidden");
-  }
-},4000);
