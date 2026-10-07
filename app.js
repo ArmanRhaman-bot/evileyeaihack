@@ -9,9 +9,9 @@ const ADMIN_PASS="@arman2026##";
 /* ===== SESSION STATE ===== */
 let SESSION = {
   total:0, win:0, loss:0,
-  log: [],           // [{period, predSize, predNum, actSize, actNum, result}]
-  pending: null,     // {period, size, num, conf}
-  lastIssue: null
+  log: [],                 // resolved [{period, predSize, predNum, actSize, actNum, result}]
+  pending: null,           // {period, size, num, conf}
+  lastResolvedPeriod: null // kon period ta resolve hoyeche
 };
 
 function headers(){return {"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{})}}
@@ -111,7 +111,7 @@ function cclass(c){return (c||"").includes("red")?"red":(c||"").includes("green"
 })();
 
 /* ================================================== */
-/* AI PREDICTION (same logic as python)               */
+/* AI PREDICTION — same logic as python               */
 /* ================================================== */
 function aiAnalyze(data){
   if(!data || !data.length){
@@ -139,9 +139,13 @@ function aiAnalyze(data){
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
 /* ================================================== */
-/* MAIN PREDICTION LOOP                               */
+/* MAIN TICK                                          */
 /* ================================================== */
+let TICK_RUNNING = false;
+
 async function tick(){
+  if(TICK_RUNNING) return;
+  TICK_RUNNING = true;
   try{
     const t = performance.now();
     const j = await api("/api/history?x="+Date.now());
@@ -154,52 +158,68 @@ async function tick(){
     const currNum    = Number(d[0].number);
     const currSize   = classify(currNum);
 
-    // ===== RESOLVE pending prediction =====
+    /* ===== STEP 1: RESOLVE pending prediction (only once per period) ===== */
     if(SESSION.pending && String(SESSION.pending.period) === currPeriod){
-      const res = (SESSION.pending.size === currSize) ? "WIN" : "LOSS";
-      SESSION.total++;
-      if(res==="WIN") SESSION.win++; else SESSION.loss++;
+      if(SESSION.lastResolvedPeriod !== currPeriod){
+        SESSION.lastResolvedPeriod = currPeriod;
 
-      SESSION.log.unshift({
-        period: SESSION.pending.period,
-        predSize: SESSION.pending.size,
-        predNum: SESSION.pending.num,
-        actSize: currSize,
-        actNum: currNum,
-        result: res
-      });
-      if(SESSION.log.length > 30) SESSION.log.pop();
+        const res = (SESSION.pending.size === currSize) ? "WIN" : "LOSS";
+        SESSION.total++;
+        if(res==="WIN") SESSION.win++; else SESSION.loss++;
 
-      renderLastResult(SESSION.log[0]);
-      renderStats();
-      renderLog();
-      renderModal();
+        SESSION.log.unshift({
+          period: currPeriod,
+          predSize: SESSION.pending.size,
+          predNum: SESSION.pending.num,
+          actSize: currSize,
+          actNum: currNum,
+          result: res
+        });
+        if(SESSION.log.length > 30) SESSION.log.pop();
 
-      if(res==="WIN") toast("✅ WIN — "+SESSION.pending.size);
-      else toast("❌ LOSS — was "+currSize);
+        renderLastResult(SESSION.log[0]);
+        renderStats();
+        renderLog();
+        renderModal();
 
-      SESSION.pending = null;
+        toast(res==="WIN" ? "✅ WIN" : "❌ LOSS");
+
+        /* clear pending — next block generates for next period */
+        SESSION.pending = null;
+      }
     }
 
-    // ===== Generate NEW prediction for NEXT period =====
+    /* ===== STEP 2: GENERATE new prediction (only once per period) ===== */
     if(!SESSION.pending){
       const nxt = String(Number(currPeriod)+1);
-      const a = aiAnalyze(d);
-      SESSION.pending = { period: nxt, size: a.size, num: a.num, conf: a.conf };
+      /* Only generate if we haven't already predicted this target */
+      if(SESSION.lastResolvedPeriod !== nxt){
+        const a = aiAnalyze(d);
+        SESSION.pending = { period: nxt, size: a.size, num: a.num, conf: a.conf };
+      }
     }
 
-    // ===== Render current prediction =====
-    const p = SESSION.pending;
-    $("targetPeriod").textContent = p.period;
-    $("predNum").textContent = p.num;
-    $("predNum").className = p.size==="BIG" ? "red" : "green";
-    $("predSize").textContent = (p.size==="BIG"?"🔴 ":"🔵 ") + p.size;
-    $("predConf").textContent = "CONF: " + p.conf + "%";
-    $("predStatus").textContent = "Waiting for period " + p.period + "…";
+    /* ===== STEP 3: Render current prediction ===== */
+    if(SESSION.pending){
+      const p = SESSION.pending;
+      $("targetPeriod").textContent = p.period;
+      $("predNum").textContent = p.num;
+      $("predNum").className = p.size==="BIG" ? "red" : "green";
+      $("predSize").textContent = (p.size==="BIG"?"🔴 ":"🔵 ") + p.size;
+      $("predConf").textContent = "CONF: " + p.conf + "%";
+      $("predStatus").textContent = "Waiting for period " + p.period + "…";
+    } else {
+      $("targetPeriod").textContent = currPeriod;
+      $("predSize").textContent = "-- LOCKED --";
+      $("predConf").textContent = "CONF: --%";
+      $("predStatus").textContent = "Resolving…";
+    }
     $("lastUpdated").textContent = new Date().toLocaleTimeString();
 
   }catch(e){
     $("predStatus").textContent = "OFFLINE — check server";
+  } finally {
+    TICK_RUNNING = false;
   }
 }
 
@@ -264,7 +284,8 @@ async function loginUser(){
     localStorage.setItem("evil_role",role);
     show("userApp");
     tick();
-    setInterval(tick, 15000);
+    if(window.__tickTimer) clearInterval(window.__tickTimer);
+    window.__tickTimer = setInterval(tick, 15000);
   }catch(e){toast(e.message)}
 }
 
@@ -284,6 +305,7 @@ async function loginAdmin(){
 
 async function logout(){
   try{await api("/api/logout",{method:"POST"})}catch{}
+  if(window.__tickTimer) clearInterval(window.__tickTimer);
   token="";role="";localStorage.clear();show("authScreen");
 }
 
@@ -327,8 +349,21 @@ $("logoutUser").onclick=logout;
 $("logoutAdmin").onclick=logout;
 $("adminRefresh").onclick=loadAdmin;
 $("genKey").onclick=genKey;
-$("refresh").onclick=tick;
-$("inject").onclick=()=>{ SESSION.pending=null; tick(); toast("New prediction generated"); };
+
+/* REFRESH — live theke just status update, kono notun prediction na */
+$("refresh").onclick=()=>{ tick(); toast("Refreshed"); };
+
+/* INJECT — force re-lock but don't spam. Sudhu jodi pending na thake. */
+$("inject").onclick=()=>{
+  if(SESSION.pending){
+    toast("Prediction already locked for " + SESSION.pending.period);
+    return;
+  }
+  SESSION.pending = null;
+  tick();
+  toast("Prediction generated");
+};
+
 $("tg").onclick=()=>window.open("https://t.me/Topboyadm","_blank","noopener,noreferrer");
 $("showTg").onclick=()=>window.open("https://t.me/Topboyadm","_blank","noopener,noreferrer");
 
@@ -339,8 +374,8 @@ $("hideAuth").onclick=()=>{ $("floatPanel").classList.add("hidden"); $("reopenBt
 document.querySelectorAll("nav button[data-target]").forEach(b=>{
   b.onclick=()=>{
     const cards=document.querySelectorAll("#userApp .card");
-    if(b.dataset.target==="log"&&cards[1])cards[1].scrollIntoView({behavior:"smooth"});
-    if(b.dataset.target==="stats"&&cards[0])cards[0].scrollIntoView({behavior:"smooth"});
+    if(b.dataset.target==="log"&&cards[2])cards[2].scrollIntoView({behavior:"smooth"});
+    if(b.dataset.target==="stats"&&cards[1])cards[1].scrollIntoView({behavior:"smooth"});
   };
 });
 
@@ -348,5 +383,9 @@ document.querySelectorAll("nav button[data-target]").forEach(b=>{
 /* BOOT                                               */
 /* ================================================== */
 if(token&&role==="admin"){show("adminApp");loadAdmin()}
-else if(token&&role==="user"){show("userApp");tick();setInterval(tick,15000);}
+else if(token&&role==="user"){
+  show("userApp");tick();
+  if(window.__tickTimer) clearInterval(window.__tickTimer);
+  window.__tickTimer = setInterval(tick, 15000);
+}
 else show("authScreen");
