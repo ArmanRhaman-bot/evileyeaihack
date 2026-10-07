@@ -8,8 +8,8 @@ const PORT = process.env.PORT || 10000;
 const API_URL = process.env.WINGO_API_URL ||
   "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
 
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "CHANGE_ME_NOW";
+const ADMIN_USER = "@arman";
+const ADMIN_PASSWORD = "@arman2026##";
 
 const DATA_DIR = path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "store.json");
